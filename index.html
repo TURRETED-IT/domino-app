@@ -2,108 +2,132 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Domino Royal AI - Full Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Domino Royal AI - PNG Edition</title>
     <script async src="https://docs.opencv.org/4.5.4/opencv.js"></script>
     <style>
         :root { --gold: #d4af37; --accent: #ff3b30; --green: #32d74b; --bg: #050505; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; overflow: hidden; }
         
-        /* الهيدر وفصل الأزرار */
-        .header { display: flex; padding: 50px 0 15px; background: rgba(0,0,0,0.95); border-bottom: 1px solid var(--gold); }
-        .side { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .score { font-size: 42px; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
-        .label { font-size: 11px; color: var(--gold); letter-spacing: 1px; margin-bottom: 5px; }
-        
-        .add-btn { 
-            width: 60px; height: 60px; border-radius: 50%; border: 2px solid #fff; 
-            background: rgba(255,255,255,0.05); color: #fff; font-size: 32px; 
-            margin-top: 10px; cursor: pointer; transition: 0.2s;
+        /* الصورة الخلفية مع تأثير التغبيش وتعديل الامتداد إلى png */
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            background: var(--bg) url('domino.png') no-repeat center center fixed; 
+            background-size: cover; color: #fff; font-family: -apple-system, sans-serif; 
+            overflow: hidden; 
         }
-        .add-btn:active { transform: scale(0.9); background: var(--gold); color: #000; }
+        
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1; }
 
-        /* سجل النتائج (يضاف للأسفل) */
-        #history { flex: 1; overflow-y: auto; padding: 15px; background: rgba(255,255,255,0.02); }
-        .row { display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 1px solid #111; font-size: 20px; color: #444; }
-        .row .active-num { color: #fff; font-weight: bold; }
+        #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
+
+        /* الهيدر والأزرار */
+        .header { display: flex; width: 100%; padding: 60px 0 20px; background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(212, 175, 55, 0.3); }
+        .side { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .score-val { font-size: 48px; font-weight: 800; margin: 5px 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .label { font-size: 10px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+        
+        .plus-btn {
+            width: 65px; height: 65px; border-radius: 50%; border: 2px solid #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 35px;
+            background: rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .plus-btn:active { transform: scale(0.9); background: var(--gold); color: #000; border-color: var(--gold); }
+
+        /* سجل النتائج */
+        #history-box { 
+            flex: 1; overflow-y: auto; padding: 15px; 
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+        .entry { display: flex; justify-content: space-around; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 22px; font-weight: 200; }
+        .active-add { color: #fff; font-weight: 600; }
+        .inactive-add { color: #444; }
+
+        /* التحكم السفلي */
+        .footer { display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid #222; }
+        .f-btn { flex: 1; padding: 18px; background: none; border: none; color: #666; font-size: 11px; letter-spacing: 1px; font-weight: bold; cursor: pointer; }
 
         /* شاشة الكاميرا */
-        #cam-layer { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
-        video { width: 100%; height: 70%; object-fit: cover; }
-        .cam-ui { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; gap: 20px; }
-        .snap { background: var(--gold); border: none; padding: 18px 60px; border-radius: 40px; font-weight: bold; font-size: 20px; box-shadow: 0 0 25px rgba(212,175,55,0.4); }
-        
-        /* شاشة البداية (اختيار الهدف) */
-        #setup { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .setup-card { background: #111; padding: 30px; border-radius: 25px; border: 1px solid var(--gold); text-align: center; }
+        #cam-ui { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
+        video { width: 100%; height: 75%; object-fit: cover; }
+        .cam-tools { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #000; }
+        .snap-btn { background: var(--gold); color: #000; padding: 20px 70px; border-radius: 50px; font-weight: 900; font-size: 18px; border: none; box-shadow: 0 0 30px rgba(212,175,55,0.4); }
+
+        /* البداية */
+        #setup { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .card { background: rgba(20,20,20,0.95); padding: 40px; border-radius: 30px; border: 1px solid var(--gold); text-align: center; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
+    <div class="overlay"></div>
 
     <div id="setup">
-        <div class="setup-card">
-            <h2 style="color:var(--gold); font-weight: 200;">DOMINO ROYAL</h2>
-            <p style="font-size: 12px; color: #666;">هدف الفوز</p>
-            <input type="number" id="limit" value="151" style="background:#000; border:1px solid #333; color:#fff; padding:10px; width:80px; text-align:center; border-radius:10px; font-size:20px;">
-            <button onclick="startApp()" style="display:block; width:100%; margin-top:20px; background:var(--gold); border:none; padding:15px; border-radius:12px; font-weight:bold;">ابدأ اللعب</button>
+        <div class="card">
+            <h1 style="color:var(--gold); font-weight:100; margin-bottom:10px;">ROYAL DOMINO</h1>
+            <p style="color:#555; font-size:12px;">حدد هدف الفوز</p>
+            <input type="number" id="win-limit" value="151" style="background:none; border:1px solid #333; color:#fff; padding:12px; width:100px; text-align:center; border-radius:15px; font-size:24px;">
+            <button onclick="initGame()" style="display:block; width:100%; margin-top:25px; background:var(--gold); color:#000; padding:15px; border-radius:15px; font-weight:bold; border:none; font-size:16px;">ابدأ الجولة</button>
         </div>
     </div>
 
-    <div id="main-ui" style="display:none; height: 100vh; flex-direction: column;">
+    <div id="app-container" style="display:none;">
         <div class="header">
             <div class="side">
-                <div class="label">HOME (لك)</div>
-                <div id="h-total" class="score" style="color:var(--green)">0</div>
-                <button class="add-btn" onclick="openCam('h')">+</button>
+                <span class="label">HOME</span>
+                <div id="h-sum" class="score-val" style="color:var(--green);">0</div>
+                <div class="plus-btn" onclick="openVision('h')">+</div>
             </div>
-            <div class="side" style="border-right: 1px solid #222;">
-                <div class="label">VISITOR</div>
-                <div id="v-total" class="score" style="color:var(--accent)">0</div>
-                <button class="add-btn" onclick="openCam('v')" style="border-color:var(--accent); color:var(--accent)">+</button>
+            <div class="side" style="border-right: 1px solid rgba(255,255,255,0.05);">
+                <span class="label">VISITOR</span>
+                <div id="v-sum" class="score-val" style="color:var(--accent);">0</div>
+                <div class="plus-btn" onclick="openVision('v')" style="border-color:var(--accent); color:var(--accent);">+</div>
             </div>
         </div>
 
-        <div id="history"></div>
+        <div id="history-box"></div>
 
-        <div style="display:flex; background:#000; border-top:1px solid #111;">
-            <button onclick="location.reload()" style="flex:1; padding:15px; background:none; border:none; color:#444; font-size:11px;">إعادة تعيين</button>
+        <div class="footer">
+            <button class="f-btn" onclick="resetAll()">RESTART GAME</button>
+            <button class="f-btn" onclick="location.reload()">MENU</button>
         </div>
     </div>
 
-    <div id="cam-layer">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <div class="cam-ui">
-            <div id="status" style="color:var(--gold); font-size: 14px;">ضع القطعة في منتصف الشاشة</div>
-            <button class="snap" onclick="runAI()">التقاط النتيجة (+)</button>
-            <button onclick="closeCam()" style="color:#444; background:none; border:none;">إلغاء</button>
+    <div id="cam-ui">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="procCanvas" style="display:none;"></canvas>
+        <div class="cam-tools">
+            <div id="ai-info" style="color:var(--gold); font-size:12px;">وجه الكاميرا نحو قطعة الدومينو</div>
+            <button class="snap-btn" onclick="scanDots()">التقاط (+)</button>
+            <button onclick="closeVision()" style="color:#444; background:none; border:none; font-weight:bold;">إلغاء</button>
         </div>
     </div>
 
     <script>
-        let scoreH = 0, scoreV = 0, side = '';
+        let totalH = 0, totalV = 0, activeSide = '';
         let stream = null;
 
-        function startApp() {
+        function initGame() {
             document.getElementById('setup').style.display = 'none';
-            document.getElementById('main-ui').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'flex';
         }
 
-        function openCam(s) {
-            side = s;
-            document.getElementById('cam-layer').style.display = 'flex';
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", focusMode: "continuous" } })
-                .then(st => { stream = st; document.getElementById('video').srcObject = st; });
+        function openVision(side) {
+            activeSide = side;
+            document.getElementById('cam-ui').style.display = 'flex';
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(s => { stream = s; document.getElementById('webcam').srcObject = s; })
+                .catch(e => alert("الكاميرا تتطلب اتصال آمن HTTPS"));
         }
 
-        function closeCam() {
+        function closeVision() {
             if(stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('cam-layer').style.display = 'none';
+            document.getElementById('cam-ui').style.display = 'none';
         }
 
-        function runAI() {
-            const v = document.getElementById('video');
-            const c = document.getElementById('canvas');
+        function scanDots() {
+            const v = document.getElementById('webcam');
+            const c = document.getElementById('procCanvas');
             c.width = v.videoWidth; c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
 
@@ -111,39 +135,51 @@
                 let src = cv.imread(c);
                 let gray = new cv.Mat();
                 cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                cv.medianBlur(gray, gray, 5); // تنظيف الضوضاء (منع الرقم 91)
+                cv.medianBlur(gray, gray, 5);
 
                 let circles = new cv.Mat();
-                // كشف الدوائر فقط (النقاط السوداء)
+                // البحث عن الدوائر الهندسية فقط لمنع الأخطاء
                 cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 25, 50, 35, 15, 55);
 
-                let result = circles.cols;
-                if (!result || result > 12) result = 0; // حماية ضد الأرقام الوهمية
+                let points = circles.cols;
+                if (!points || points > 12) points = 0;
 
-                addScore(result);
+                commitPoints(points);
                 src.delete(); gray.delete(); circles.delete();
-                closeCam();
-            } catch (e) { alert("المحرك الذكي يتحمل.. انتظر ثانية"); }
+                closeVision();
+            } catch (e) { alert("المحرك الذكي لا يزال يتحمل.."); }
         }
 
-        function addScore(n) {
+        function commitPoints(n) {
             let vH = 0, vV = 0;
-            if (side === 'h') { scoreH += n; vH = n; }
-            else { scoreV += n; vV = n; }
+            if (activeSide === 'h') { totalH += n; vH = n; }
+            else { totalV += n; vV = n; }
 
-            document.getElementById('h-total').innerText = scoreH;
-            document.getElementById('v-total').innerText = scoreV;
+            document.getElementById('h-sum').innerText = totalH;
+            document.getElementById('v-sum').innerText = totalV;
 
             const row = document.createElement('div');
-            row.className = 'row';
-            row.innerHTML = `<div class="${vH>0?'active-num':''}">${vH}</div><div class="${vV>0?'active-num':''}">${vV}</div>`;
-            const h = document.getElementById('history');
-            h.appendChild(row);
-            h.scrollTop = h.scrollHeight;
+            row.className = 'entry';
+            row.innerHTML = `
+                <div class="${vH>0?'active-add':'inactive-add'}">${vH}</div>
+                <div class="${vV>0?'active-add':'inactive-add'}">${vV}</div>
+            `;
+            const box = document.getElementById('history-box');
+            box.appendChild(row);
+            box.scrollTop = box.scrollHeight;
 
-            let win = parseInt(document.getElementById('limit').value);
-            if(scoreH >= win) alert("الفائز: HOME!");
-            else if(scoreV >= win) alert("الفائز: VISITOR!");
+            let limit = parseInt(document.getElementById('win-limit').value);
+            if(totalH >= limit) alert("مبروك! HOME فاز بالجولة");
+            else if(totalV >= limit) alert("مبروك! VISITOR فاز بالجولة");
+        }
+
+        function resetAll() {
+            if(confirm("هل تريد مسح سجل النقاط والبدء من جديد؟")) {
+                totalH = 0; totalV = 0;
+                document.getElementById('h-sum').innerText = "0";
+                document.getElementById('v-sum').innerText = "0";
+                document.getElementById('history-box').innerHTML = "";
+            }
         }
     </script>
 </body>
