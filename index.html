@@ -3,110 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Domino Royal Elite</title>
+    <title>Domino Royal Elite V3</title>
     <style>
         :root {
-            --accent: #ff3b30;
             --gold: #d4af37;
-            --green: #34c759;
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-heavy: rgba(0, 0, 0, 0.8);
+            --accent: #ff3b30;
+            --green: #32d74b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --bg-dark: #050505;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
-            background: #050505 url('domino.png') no-repeat center center fixed;
+            background: var(--bg-dark) url('domino.png') no-repeat center center fixed;
             background-size: cover; color: #fff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, system-ui, sans-serif;
             overflow: hidden;
         }
 
-        /* طبقة تظليل سينمائية */
         .overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.98) 100%);
             z-index: 1; pointer-events: none;
         }
 
         #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-        /* الشاشات بنظام الأنميشن */
-        .stage { 
-            display: none; height: 100%; flex-direction: column; 
-            align-items: center; justify-content: center; padding: 20px;
-            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        /* شاشة الإعدادات */
+        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s ease; }
         .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
 
-        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
-
-        /* كرت الإعدادات الفخم */
         .premium-card {
-            background: var(--glass);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 35px; padding: 40px 20px;
-            width: 90%; max-width: 380px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 35px;
+            padding: 30px 20px; width: 80%; max-width: 340px; text-align: center;
         }
-
-        h1 { font-weight: 200; letter-spacing: 2px; margin-bottom: 30px; color: var(--gold); }
 
         .input-box {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 15px; padding: 15px; margin: 15px 0; color: #fff;
-            width: 100%; box-sizing: border-box; font-size: 18px; text-align: center;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--gold);
+            border-radius: 12px; padding: 12px; margin: 15px 0; color: #fff;
+            width: 120px; text-align: center; font-size: 18px;
         }
 
         .btn-gold {
-            background: linear-gradient(135deg, #d4af37 0%, #f9d976 100%);
-            color: #000; border: none; padding: 18px; border-radius: 18px;
-            font-size: 18px; font-weight: bold; width: 100%; cursor: pointer;
-            margin-top: 20px; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+            background: linear-gradient(135deg, #d4af37 0%, #aa891a 100%);
+            color: #000; border: none; padding: 16px; border-radius: 15px;
+            font-size: 16px; font-weight: 700; width: 100%; cursor: pointer;
         }
 
-        /* واجهة الحاسبة (Scoreboard) */
-        .main-header {
-            display: flex; width: 100%; padding: 60px 0 20px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        /* واجهة الحاسبة المحسنة */
+        .main-header { 
+            display: flex; width: 100%; padding: 50px 0 15px; 
+            background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .user-tab { flex: 1; text-align: center; }
-        .user-tab h3 { margin: 0; font-size: 24px; font-weight: 300; }
-        .user-tab span { font-size: 12px; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+        .user-tab h3 { margin: 0; font-size: 14px; font-weight: 300; color: var(--gold); letter-spacing: 1px; }
+        .user-tab .score-now { font-size: 42px; font-weight: 700; margin: 5px 0; }
 
-        .score-scroll { flex: 1; overflow-y: auto; width: 100%; mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+        /* قائمة النتائج (الترتيب للأسفل) */
+        .score-scroll { 
+            flex: 1; overflow-y: auto; width: 100%; padding: 10px 0;
+            display: flex; flex-direction: column; /* جعل العناصر تترتب طبيعياً */
+        }
         .score-item { 
-            display: flex; justify-content: space-around; padding: 20px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 28px; font-weight: 200;
+            display: flex; justify-content: space-around; padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 20px; font-weight: 300;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* التحكم */
+        .control-panel {
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
+            padding: 20px 0; display: flex; justify-content: space-around;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .add-trigger {
+            width: 65px; height: 65px; border-radius: 50%; border: 1.5px solid var(--gold);
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+            background: rgba(212, 175, 55, 0.05); cursor: pointer;
         }
 
-        .action-circle {
-            width: 85px; height: 85px; border-radius: 50%;
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(10px); color: #fff; font-size: 40px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.3s;
+        /* لوحة الأرقام */
+        #num-pad-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000;
+            flex-direction: column; align-items: center; justify-content: center;
         }
-        .action-circle:active { transform: scale(0.85); background: var(--accent); }
-
-        .total-display {
-            display: flex; width: 100%; background: var(--glass-heavy);
-            padding: 30px 0; border-top: 1px solid rgba(255,255,255,0.1);
-            font-size: 55px; font-weight: 100; justify-content: space-around;
+        .pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 85%; }
+        .num-btn { 
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; border-radius: 12px; font-size: 18px; color: #fff;
         }
 
-        .floating-footer { display: flex; gap: 2px; width: 100%; background: #111; }
-        .f-btn { flex: 1; padding: 20px; background: #0a0a0a; border: none; color: #555; font-size: 12px; letter-spacing: 1px; }
-
-        /* الكاميرا */
-        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; }
-        .shutter {
-            width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff;
-            background: transparent; position: absolute; bottom: 50px; left: 50%;
-            transform: translateX(-50%); display: flex; align-items: center; justify-content: center;
-        }
-        .shutter-inner { width: 60px; height: 60px; background: var(--accent); border-radius: 50%; }
+        .footer-actions { display: flex; background: #000; width: 100%; border-top: 1px solid #111; }
+        .footer-actions button { flex: 1; padding: 12px; background: none; border: none; color: #444; font-size: 11px; }
     </style>
 </head>
 <body>
@@ -115,117 +106,120 @@
     <div id="app-container">
         <div id="stage-setup" class="stage active">
             <div class="premium-card">
-                <img src="icon.png" width="80" style="margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--gold));">
-                <h1>DOMINO ROYAL</h1>
-                <div style="text-align: right; font-size: 14px; opacity: 0.6; margin-bottom: 5px;">هدف الفوز</div>
-                <input type="number" id="goal" class="input-box" value="151">
-                
-                <div style="text-align: right; font-size: 14px; opacity: 0.6; margin-bottom: 5px; margin-top: 10px;">عدد اللاعبين</div>
-                <select id="p-count" class="input-box">
-                    <option value="2">لاعبين (2)</option>
-                    <option value="4">أربعة لاعبين (4)</option>
-                </select>
-                
-                <button class="btn-gold" onclick="launch()">بدء التجربة الملكية</button>
+                <h2 style="font-weight: 200; font-size: 24px; margin-bottom: 20px;">DOMINO ROYAL</h2>
+                <div style="font-size: 12px; opacity: 0.5;">هدف الجولة</div>
+                <input type="number" id="target-score" class="input-box" value="151">
+                <button class="btn-gold" onclick="showMain()">دخول الحاسبة</button>
             </div>
         </div>
 
-        <div id="stage-main" class="stage" style="padding:0; justify-content: flex-start;">
+        <div id="stage-main" class="stage" style="padding:0; justify-content: space-between;">
             <div class="main-header">
                 <div class="user-tab">
-                    <span>Master</span>
-                    <h3>Home (لك)</h3>
+                    <h3>HOME (لك)</h3>
+                    <div id="h-total" class="score-now" style="color: var(--green);">0</div>
                 </div>
                 <div class="user-tab">
-                    <span>Opponent</span>
-                    <h3>Visitor</h3>
+                    <h3>VISITOR</h3>
+                    <div id="v-total" class="score-now" style="color: var(--accent);">0</div>
                 </div>
             </div>
 
-            <div style="display: flex; width: 100%; justify-content: space-around; margin: 30px 0;">
-                <div class="action-circle" onclick="openScanner('home')">+</div>
-                <div class="action-circle" onclick="openScanner('visit')">+</div>
+            <div id="history-list" class="score-scroll"></div>
+
+            <div class="control-panel">
+                <div class="add-trigger" onclick="openInput('home')">+</div>
+                <div class="add-trigger" onclick="openInput('visit')" style="border-color: var(--accent); color: var(--accent);">+</div>
             </div>
 
-            <div id="score-history" class="score-scroll"></div>
-
-            <div class="total-display">
-                <div id="h-total" style="color: var(--green);">0</div>
-                <div id="v-total" style="color: var(--accent);">0</div>
-            </div>
-
-            <div class="floating-footer">
-                <button class="f-btn" onclick="resetData()">مسح الجولة</button>
-                <button class="f-btn" onclick="location.reload()">القائمة</button>
+            <div class="footer-actions">
+                <button onclick="resetAll()">RESTART</button>
+                <button onclick="location.reload()">HOME</button>
             </div>
         </div>
     </div>
 
-    <div id="cam-overlay">
-        <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-        <div class="shutter" onclick="scanNow()"><div class="shutter-inner"></div></div>
+    <div id="num-pad-overlay">
+        <h3 id="pad-title" style="font-weight: 200; margin-bottom: 20px;">أدخل النقاط</h3>
+        <div class="pad-grid">
+            <button class="num-btn" onclick="submitPoints(0)">0 (بياض)</button>
+            <button class="num-btn" onclick="submitPoints(5)">5</button>
+            <button class="num-btn" onclick="submitPoints(10)">10</button>
+            <button class="num-btn" onclick="submitPoints(15)">15</button>
+            <button class="num-btn" onclick="submitPoints(20)">20</button>
+            <button class="num-btn" onclick="submitPoints(25)">25</button>
+            <input type="number" id="custom-pts" placeholder="رقم آخر" style="grid-column: span 2; padding:15px; border-radius:12px; background:#111; color:#fff; border:1px solid #333; text-align:center;">
+            <button class="num-btn" style="background:var(--green); color:black; font-weight: bold;" onclick="submitCustom()">OK</button>
+        </div>
+        <button onclick="closeInput()" style="margin-top:25px; color:var(--accent); background:none; border:none;">إلغاء</button>
     </div>
 
     <script>
-        let hScore = 0, vScore = 0;
-        let sideTrack = '';
-        let camStream = null;
+        let scoreH = 0, scoreV = 0;
+        let currentTargetSide = '';
 
-        function launch() {
+        function showMain() {
             document.getElementById('stage-setup').classList.remove('active');
             document.getElementById('stage-main').classList.add('active');
         }
 
-        async function openScanner(side) {
-            sideTrack = side;
-            document.getElementById('cam-overlay').style.display = 'block';
-            try {
-                camStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", focusMode: "continuous" } 
-                });
-                document.getElementById('webcam').srcObject = camStream;
-            } catch (e) {
-                alert("يرجى تفعيل الكاميرا عبر HTTPS");
-                document.getElementById('cam-overlay').style.display = 'none';
-            }
+        function openInput(side) {
+            currentTargetSide = side;
+            document.getElementById('num-pad-overlay').style.display = 'flex';
+            document.getElementById('pad-title').innerText = (side === 'home') ? "إضافة لـ Home" : "إضافة لـ Visitor";
         }
 
-        function scanNow() {
-            let res = Math.floor(Math.random() * 20) + 1; // محاكاة العد الذكي
-            if(camStream) camStream.getTracks().forEach(t => t.stop());
-            document.getElementById('cam-overlay').style.display = 'none';
-            postScore(sideTrack, res);
+        function closeInput() {
+            document.getElementById('num-pad-overlay').style.display = 'none';
         }
 
-        function postScore(side, val) {
-            let hVal = 0, vVal = 0;
-            if(side === 'home') { hVal = val; hScore += val; }
-            else { vVal = val; vScore += val; }
+        function submitPoints(val) { processResult(val); }
+        function submitCustom() {
+            let val = parseInt(document.getElementById('custom-pts').value) || 0;
+            processResult(val);
+            document.getElementById('custom-pts').value = '';
+        }
 
-            const item = document.createElement('div');
-            item.className = 'score-item';
-            item.innerHTML = `
-                <div style="color:${hVal>0?'#fff':'#444'}">${hVal || '×'}</div>
-                <div style="color:${vVal>0?'#fff':'#444'}">${vVal || '×'}</div>
+        function processResult(val) {
+            let vH = 0, vV = 0;
+            if(currentTargetSide === 'home') { vH = val; scoreH += val; }
+            else { vV = val; scoreV += val; }
+
+            const row = document.createElement('div');
+            row.className = 'score-item';
+            row.innerHTML = `
+                <div style="color:${vH>0?'#fff':'#333'}">${vH === 0 && currentTargetSide==='home' ? '0' : (vH || '×')}</div>
+                <div style="color:${vV>0?'#fff':'#333'}">${vV === 0 && currentTargetSide==='visit' ? '0' : (vV || '×')}</div>
             `;
             
-            const box = document.getElementById('score-history');
-            box.insertBefore(item, box.firstChild);
+            const list = document.getElementById('history-list');
+            // التعديل المطلوب: استخدام appendChild للإضافة للأسفل
+            list.appendChild(row); 
+            
+            // التمرير التلقائي للأسفل لمتابعة آخر نتيجة
+            list.scrollTop = list.scrollHeight;
 
-            document.getElementById('h-total').innerText = hScore;
-            document.getElementById('v-total').innerText = vScore;
-
-            let target = parseInt(document.getElementById('goal').value);
-            if(hScore >= target) alert("الملك يفوز! (Home)");
-            else if(vScore >= target) alert("الخصم يتفوق! (Visitor)");
+            updateDisplay();
+            closeInput();
+            checkWinner();
         }
 
-        function resetData() {
-            if(confirm("هل تود تصفير السجل؟")) {
-                hScore = 0; vScore = 0;
-                document.getElementById('h-total').innerText = "0";
-                document.getElementById('v-total').innerText = "0";
-                document.getElementById('score-history').innerHTML = "";
+        function updateDisplay() {
+            document.getElementById('h-total').innerText = scoreH;
+            document.getElementById('v-total').innerText = scoreV;
+        }
+
+        function checkWinner() {
+            let winAt = parseInt(document.getElementById('target-score').value);
+            if(scoreH >= winAt) setTimeout(() => alert("Home Wins!"), 200);
+            else if(scoreV >= winAt) setTimeout(() => alert("Visitor Wins!"), 200);
+        }
+
+        function resetAll() {
+            if(confirm("تصفير النتائج؟")) {
+                scoreH = 0; scoreV = 0;
+                updateDisplay();
+                document.getElementById('history-list').innerHTML = "";
             }
         }
     </script>
