@@ -3,204 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Domino Royal Elite - Final</title>
+    <title>Domino AI Vision Pro</title>
+    <script async src="https://docs.opencv.org/4.5.4/opencv.js" type="text/javascript"></script>
     <style>
-        :root {
-            --gold: #d4af37;
-            --accent: #ff3b30;
-            --green: #32d74b;
-            --bg: #050505;
-        }
-
-        body, html {
-            margin: 0; padding: 0; height: 100%; width: 100%;
-            background: var(--bg) url('domino.png') no-repeat center center fixed;
-            background-size: cover; color: #fff;
-            font-family: -apple-system, system-ui, sans-serif;
-            overflow: hidden;
-        }
-
-        .overlay {
-            position: fixed; inset: 0;
-            background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 100%);
-            z-index: 1; pointer-events: none;
-        }
-
+        :root { --gold: #d4af37; --accent: #ff3b30; --green: #32d74b; --bg: #050505; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg) url('domino.png') no-repeat center center fixed; background-size: cover; color: #fff; font-family: -apple-system, sans-serif; overflow: hidden; }
+        .overlay { position: fixed; inset: 0; background: radial-gradient(circle, transparent 0%, rgba(0,0,0,0.9) 100%); z-index: 1; pointer-events: none; }
         #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-        /* شاشات النظام */
-        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.4s ease; }
-        .active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .header { display: flex; width: 100%; padding: 60px 0 10px; background: rgba(0,0,0,0.6); }
+        .side { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .side h3 { font-size: 12px; color: var(--gold); margin: 0; }
+        .total { font-size: 45px; font-weight: 800; margin: 5px 0; }
 
-        /* كرت البداية */
-        .setup-card {
-            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(212, 175, 55, 0.1); border-radius: 30px;
-            padding: 25px; width: 280px; text-align: center;
-        }
-
-        .btn-gold {
-            background: linear-gradient(135deg, #d4af37 0%, #aa891a 100%);
-            color: #000; border: none; padding: 14px; border-radius: 12px;
-            font-size: 15px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 15px;
+        /* الأزرار تحت الأرقام مباشرة */
+        .add-btn {
+            width: 55px; height: 55px; border-radius: 50%; border: 2px solid #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+            background: rgba(255,255,255,0.1); cursor: pointer; margin-top: 5px;
         }
 
-        /* الحاسبة الرئيسية */
-        .header { 
-            display: flex; width: 100%; padding: 50px 0 10px; 
-            background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .header-cell { flex: 1; text-align: center; }
-        .header-cell h3 { margin: 0; font-size: 13px; font-weight: 300; color: var(--gold); }
-        .total-score { font-size: 38px; font-weight: 700; margin: 5px 0; }
+        .history { flex: 1; overflow-y: auto; width: 100%; padding: 20px 0; }
+        .row { display: flex; justify-content: space-around; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 20px; font-weight: 200; }
 
-        /* قائمة السجل (الجديد بالأسفل) */
-        .history-container { 
-            flex: 1; overflow-y: auto; width: 100%; 
-            display: flex; flex-direction: column; /* الترتيب الطبيعي للأسفل */
-        }
-        .score-entry { 
-            display: flex; justify-content: space-around; padding: 10px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 18px; font-weight: 200;
-        }
-
-        /* التحكم */
-        .footer-ctrl {
-            background: rgba(0,0,0,0.85); padding: 15px 0; 
-            display: flex; justify-content: space-around; align-items: center;
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-        .plus-btn {
-            width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--gold);
-            display: flex; align-items: center; justify-content: center; font-size: 28px;
-            background: rgba(255,255,255,0.03); cursor: pointer;
-        }
-
-        /* لوحة الأرقام الفخمة */
-        #pad-modal {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .grid-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 80%; }
-        .n-btn { 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            padding: 18px; border-radius: 12px; font-size: 18px; color: #fff;
-        }
-
-        .action-bar { display: flex; width: 100%; background: #000; }
-        .action-bar button { flex: 1; padding: 10px; background: none; border: none; color: #333; font-size: 10px; }
+        /* واجهة الكاميرا */
+        #cam-screen { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
+        video { width: 100%; height: 75%; object-fit: cover; }
+        .cam-ui { height: 25%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111; gap: 15px; }
+        .scan-btn { background: var(--gold); color: #000; padding: 15px 40px; border-radius: 30px; font-weight: bold; border: none; }
+        
+        #status { font-size: 12px; color: var(--gold); }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
-
     <div id="app-container">
-        <div id="setup-view" class="stage active">
-            <div class="setup-card">
-                <h2 style="font-weight:100; font-size:20px; color:var(--gold);">ROYAL DOMINO</h2>
-                <input type="number" id="win-score" value="151" 
-                style="background:none; border:1px solid #333; color:white; padding:10px; border-radius:10px; width:80px; text-align:center; font-size:18px;">
-                <button class="btn-gold" onclick="launchApp()">دخول</button>
+        <div class="header">
+            <div class="side">
+                <h3>HOME (لك)</h3>
+                <div id="h-sum" class="total" style="color:var(--green)">0</div>
+                <div class="add-btn" onclick="openAI('h')">+</div>
+            </div>
+            <div class="side" style="border-right: 1px solid rgba(255,255,255,0.1);">
+                <h3>VISITOR</h3>
+                <div id="v-sum" class="total" style="color:var(--accent)">0</div>
+                <div class="add-btn" onclick="openAI('v')" style="border-color:var(--accent); color:var(--accent)">+</div>
             </div>
         </div>
 
-        <div id="main-view" class="stage" style="padding:0; justify-content: space-between;">
-            <div class="header">
-                <div class="header-cell">
-                    <h3>HOME (لك)</h3>
-                    <div id="h-sum" class="total-score" style="color:var(--green);">0</div>
-                </div>
-                <div class="header-cell">
-                    <h3>VISITOR</h3>
-                    <div id="v-sum" class="total-score" style="color:var(--accent);">0</div>
-                </div>
-            </div>
+        <div id="history-list" class="history"></div>
 
-            <div id="score-history" class="history-container"></div>
-
-            <div class="footer-ctrl">
-                <div class="plus-btn" onclick="openPad('h')">+</div>
-                <div class="plus-btn" onclick="openPad('v')" style="border-color:var(--accent); color:var(--accent);">+</div>
-            </div>
-
-            <div class="action-bar">
-                <button onclick="resetScores()">RESTART</button>
-                <button onclick="location.reload()">MENU</button>
-            </div>
+        <div style="display:flex; background:#000; border-top:1px solid #222;">
+            <button onclick="reset()" style="flex:1; padding:15px; background:none; border:none; color:#444; font-size:11px;">RESTART</button>
+            <button onclick="location.reload()" style="flex:1; padding:15px; background:none; border:none; color:#444; font-size:11px;">MENU</button>
         </div>
     </div>
 
-    <div id="pad-modal">
-        <h4 id="pad-label" style="font-weight:200; margin-bottom:20px; color:var(--gold);">إضافة نقاط</h4>
-        <div class="grid-pad">
-            <button class="n-btn" onclick="add(0)">0</button>
-            <button class="n-btn" onclick="add(5)">5</button>
-            <button class="n-btn" onclick="add(10)">10</button>
-            <button class="n-btn" onclick="add(15)">15</button>
-            <button class="n-btn" onclick="add(20)">20</button>
-            <button class="n-btn" onclick="add(25)">25</button>
-            <input type="number" id="custom-in" placeholder="غير ذلك" style="grid-column: span 2; padding:15px; border-radius:10px; background:#111; color:#fff; border:1px solid #222; text-align:center;">
-            <button class="n-btn" style="background:var(--green); color:black; font-weight:700;" onclick="addCustom()">OK</button>
+    <div id="cam-screen">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvasOutput" style="display:none;"></canvas>
+        <div class="cam-ui">
+            <div id="status">جاري تهيئة الذكاء الاصطناعي...</div>
+            <button class="scan-btn" onclick="processFrame()">التقاط وتحليل النقاط</button>
+            <button onclick="closeCam()" style="color:#fff; background:none; border:none;">إلغاء</button>
         </div>
-        <button onclick="closePad()" style="margin-top:20px; color:var(--accent); background:none; border:none; font-size:14px;">إلغاء</button>
     </div>
 
     <script>
-        let sH = 0, sV = 0, side = '';
+        let sH = 0, sV = 0, activeSide = '';
+        let stream = null;
 
-        function launchApp() {
-            document.getElementById('setup-view').classList.remove('active');
-            document.getElementById('main-view').classList.add('active');
+        async function openAI(side) {
+            activeSide = side;
+            document.getElementById('cam-screen').style.display = 'flex';
+            document.getElementById('status').innerText = "وجه الكاميرا نحو قطع الدومينو";
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                document.getElementById('video').srcObject = stream;
+            } catch (e) { alert("الكاميرا تتطلب HTTPS"); closeCam(); }
         }
 
-        function openPad(s) {
-            side = s;
-            document.getElementById('pad-modal').style.display = 'flex';
-            document.getElementById('pad-label').innerText = (s === 'h') ? "إضافة لـ Home" : "إضافة لـ Visitor";
+        function closeCam() {
+            if(stream) stream.getTracks().forEach(t => t.stop());
+            document.getElementById('cam-screen').style.display = 'none';
         }
 
-        function closePad() { document.getElementById('pad-modal').style.display = 'none'; }
+        // وظيفة الذكاء الاصطناعي لتحليل الصورة
+        function processFrame() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvasOutput');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        function add(v) { commit(v); }
-        function addCustom() {
-            let v = parseInt(document.getElementById('custom-in').value) || 0;
-            commit(v);
-            document.getElementById('custom-in').value = '';
+            try {
+                let src = cv.imread(canvas);
+                let gray = new cv.Mat();
+                cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0); // تحويل للرمادي
+                cv.threshold(gray, gray, 100, 255, cv.THRESH_BINARY_INV); // عكس الألوان لتمييز النقاط السوداء
+
+                let contours = new cv.MatVector();
+                let hierarchy = new cv.Mat();
+                cv.findContours(gray, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+
+                let dotsCount = 0;
+                for (let i = 0; i < contours.size(); ++i) {
+                    let area = cv.contourArea(contours.get(i));
+                    // تصفية المساحات الصغيرة جداً أو الكبيرة جداً لضمان أنها "نقطة" دومينو فقط
+                    if (area > 10 && area < 500) { dotsCount++; }
+                }
+
+                // التنظيف
+                src.delete(); gray.delete(); contours.delete(); hierarchy.delete();
+                
+                let finalScore = dotsCount;
+                if(finalScore > 40) finalScore = 0; // حماية في حال كانت الإضاءة سيئة
+
+                let confirmScore = prompt(`تم اكتشاف ${finalScore} نقطة. هل الرقم صحيح؟`, finalScore);
+                if(confirmScore !== null) {
+                    addScore(parseInt(confirmScore));
+                    closeCam();
+                }
+            } catch (err) {
+                alert("برجاء الانتظار حتى تحميل مكتبة الذكاء الاصطناعي بالكامل.");
+            }
         }
 
-        function commit(v) {
+        function addScore(val) {
             let vH = 0, vV = 0;
-            if(side === 'h') { vH = v; sH += v; }
-            else { vV = v; sV += v; }
+            if(activeSide === 'h') { vH = val; sH += val; }
+            else { vV = val; sV += val; }
 
             const row = document.createElement('div');
-            row.className = 'score-entry';
-            row.innerHTML = `
-                <div style="color:${vH>0?'#fff':'#333'}">${vH === 0 && side==='h' ? '0' : (vH || '×')}</div>
-                <div style="color:${vV>0?'#fff':'#333'}">${vV === 0 && side==='v' ? '0' : (vV || '×')}</div>
-            `;
+            row.className = 'row';
+            row.innerHTML = `<div>${vH}</div><div>${vV}</div>`;
+            document.getElementById('history-list').appendChild(row);
             
-            const list = document.getElementById('score-history');
-            list.appendChild(row); // الإضافة للأسفل
-            list.scrollTop = list.scrollHeight;
-
             document.getElementById('h-sum').innerText = sH;
             document.getElementById('v-sum').innerText = sV;
-
-            closePad();
-            
-            let target = parseInt(document.getElementById('win-score').value);
-            if(sH >= target) setTimeout(() => alert("Home Victory!"), 100);
-            else if(sV >= target) setTimeout(() => alert("Visitor Victory!"), 100);
         }
 
-        function resetScores() {
-            if(confirm("مسح الجولة؟")) {
+        function reset() {
+            if(confirm("تصفير؟")) {
                 sH = 0; sV = 0;
                 document.getElementById('h-sum').innerText = "0";
                 document.getElementById('v-sum').innerText = "0";
-                document.getElementById('score-history').innerHTML = "";
+                document.getElementById('history-list').innerHTML = "";
             }
         }
     </script>
