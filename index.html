@@ -3,131 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Domino Royal AI - PNG Edition</title>
+    <title>Domino 5s Master</title>
     <script async src="https://docs.opencv.org/4.5.4/opencv.js"></script>
     <style>
         :root { --gold: #d4af37; --accent: #ff3b30; --green: #32d74b; --bg: #050505; }
-        
-        /* الصورة الخلفية مع تأثير التغبيش وتعديل الامتداد إلى png */
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
             background: var(--bg) url('domino.png') no-repeat center center fixed; 
-            background-size: cover; color: #fff; font-family: -apple-system, sans-serif; 
-            overflow: hidden; 
+            background-size: cover; color: #fff; font-family: sans-serif; overflow: hidden; 
         }
-        
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1; }
+        #app { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-        #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
+        .header { display: flex; padding: 60px 0 20px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--gold); }
+        .side { flex: 1; text-align: center; }
+        .score { font-size: 50px; font-weight: 900; margin: 0; }
+        .add-btn { 
+            width: 70px; height: 70px; border-radius: 50%; border: 2px solid #fff; 
+            background: rgba(255,255,255,0.1); color: #fff; font-size: 35px; 
+            margin-top: 10px; cursor: pointer;
+        }
 
-        /* الهيدر والأزرار */
-        .header { display: flex; width: 100%; padding: 60px 0 20px; background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(212, 175, 55, 0.3); }
-        .side { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .score-val { font-size: 48px; font-weight: 800; margin: 5px 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
-        .label { font-size: 10px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+        #history { flex: 1; overflow-y: auto; padding: 20px; background: rgba(0,0,0,0.4); }
+        .row { display: flex; justify-content: space-around; padding: 10px; border-bottom: 1px solid #222; font-size: 24px; }
         
-        .plus-btn {
-            width: 65px; height: 65px; border-radius: 50%; border: 2px solid #fff;
-            display: flex; align-items: center; justify-content: center; font-size: 35px;
-            background: rgba(255,255,255,0.05); cursor: pointer; transition: 0.2s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .plus-btn:active { transform: scale(0.9); background: var(--gold); color: #000; border-color: var(--gold); }
-
-        /* سجل النتائج */
-        #history-box { 
-            flex: 1; overflow-y: auto; padding: 15px; 
-            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
-        }
-        .entry { display: flex; justify-content: space-around; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 22px; font-weight: 200; }
-        .active-add { color: #fff; font-weight: 600; }
-        .inactive-add { color: #444; }
-
-        /* التحكم السفلي */
-        .footer { display: flex; background: rgba(0,0,0,0.9); border-top: 1px solid #222; }
-        .f-btn { flex: 1; padding: 18px; background: none; border: none; color: #666; font-size: 11px; letter-spacing: 1px; font-weight: bold; cursor: pointer; }
-
-        /* شاشة الكاميرا */
-        #cam-ui { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
-        video { width: 100%; height: 75%; object-fit: cover; }
-        .cam-tools { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: #000; }
-        .snap-btn { background: var(--gold); color: #000; padding: 20px 70px; border-radius: 50px; font-weight: 900; font-size: 18px; border: none; box-shadow: 0 0 30px rgba(212,175,55,0.4); }
-
-        /* البداية */
-        #setup { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .card { background: rgba(20,20,20,0.95); padding: 40px; border-radius: 30px; border: 1px solid var(--gold); text-align: center; backdrop-filter: blur(10px); }
+        #cam-layer { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; }
+        video { width: 100%; height: 70%; object-fit: cover; }
+        .tools { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111; gap: 15px; }
+        .snap { background: var(--gold); color: #000; padding: 20px 80px; border-radius: 50px; font-weight: bold; font-size: 20px; border: none; }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
-
-    <div id="setup">
-        <div class="card">
-            <h1 style="color:var(--gold); font-weight:100; margin-bottom:10px;">ROYAL DOMINO</h1>
-            <p style="color:#555; font-size:12px;">حدد هدف الفوز</p>
-            <input type="number" id="win-limit" value="151" style="background:none; border:1px solid #333; color:#fff; padding:12px; width:100px; text-align:center; border-radius:15px; font-size:24px;">
-            <button onclick="initGame()" style="display:block; width:100%; margin-top:25px; background:var(--gold); color:#000; padding:15px; border-radius:15px; font-weight:bold; border:none; font-size:16px;">ابدأ الجولة</button>
-        </div>
-    </div>
-
-    <div id="app-container" style="display:none;">
+    <div id="app">
         <div class="header">
             <div class="side">
-                <span class="label">HOME</span>
-                <div id="h-sum" class="score-val" style="color:var(--green);">0</div>
-                <div class="plus-btn" onclick="openVision('h')">+</div>
+                <div style="font-size:12px; color:var(--gold)">HOME</div>
+                <div id="h-sum" class="score" style="color:var(--green)">0</div>
+                <button class="add-btn" onclick="openCam('h')">+</button>
             </div>
-            <div class="side" style="border-right: 1px solid rgba(255,255,255,0.05);">
-                <span class="label">VISITOR</span>
-                <div id="v-sum" class="score-val" style="color:var(--accent);">0</div>
-                <div class="plus-btn" onclick="openVision('v')" style="border-color:var(--accent); color:var(--accent);">+</div>
+            <div class="side">
+                <div style="font-size:12px; color:var(--gold)">VISITOR</div>
+                <div id="v-sum" class="score" style="color:var(--accent)">0</div>
+                <button class="add-btn" onclick="openCam('v')" style="border-color:var(--accent); color:var(--accent)">+</button>
             </div>
         </div>
-
-        <div id="history-box"></div>
-
-        <div class="footer">
-            <button class="f-btn" onclick="resetAll()">RESTART GAME</button>
-            <button class="f-btn" onclick="location.reload()">MENU</button>
-        </div>
+        <div id="history"></div>
+        <button onclick="location.reload()" style="padding:15px; background:#000; border:none; color:#555; font-size:12px;">إعادة تشغيل / مسح</button>
     </div>
 
-    <div id="cam-ui">
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="procCanvas" style="display:none;"></canvas>
-        <div class="cam-tools">
-            <div id="ai-info" style="color:var(--gold); font-size:12px;">وجه الكاميرا نحو قطعة الدومينو</div>
-            <button class="snap-btn" onclick="scanDots()">التقاط (+)</button>
-            <button onclick="closeVision()" style="color:#444; background:none; border:none; font-weight:bold;">إلغاء</button>
+    <div id="cam-layer">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="tools">
+            <div id="status" style="color:var(--gold)">وجه الكاميرا نحو المالات أو القطع المفتوحة</div>
+            <button class="snap" onclick="processAI()">احسب النتيجة (+)</button>
+            <button onclick="closeCam()" style="color:#666; background:none; border:none;">إلغاء</button>
         </div>
     </div>
 
     <script>
-        let totalH = 0, totalV = 0, activeSide = '';
+        let sH = 0, sV = 0, active = '';
         let stream = null;
 
-        function initGame() {
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-        }
-
-        function openVision(side) {
-            activeSide = side;
-            document.getElementById('cam-ui').style.display = 'flex';
+        function openCam(s) {
+            active = s;
+            document.getElementById('cam-layer').style.display = 'flex';
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                .then(s => { stream = s; document.getElementById('webcam').srcObject = s; })
-                .catch(e => alert("الكاميرا تتطلب اتصال آمن HTTPS"));
+                .then(st => { stream = st; document.getElementById('video').srcObject = st; });
         }
 
-        function closeVision() {
+        function closeCam() {
             if(stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('cam-ui').style.display = 'none';
+            document.getElementById('cam-layer').style.display = 'none';
         }
 
-        function scanDots() {
-            const v = document.getElementById('webcam');
-            const c = document.getElementById('procCanvas');
+        function processAI() {
+            const v = document.getElementById('video');
+            const c = document.getElementById('canvas');
             c.width = v.videoWidth; c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
 
@@ -138,48 +91,38 @@
                 cv.medianBlur(gray, gray, 5);
 
                 let circles = new cv.Mat();
-                // البحث عن الدوائر الهندسية فقط لمنع الأخطاء
-                cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 25, 50, 35, 15, 55);
+                // كشف الدوائر (النقاط)
+                cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 20, 50, 35, 10, 60);
 
                 let points = circles.cols;
-                if (!points || points > 12) points = 0;
+                
+                // منطق لعبة الـ 5 (الدمبل):
+                // إذا كان المجموع 10 (مثل 5/5) أو 12 (مثل 6/6) أو أي مجموع آخر
+                // الكود سيحسب النقاط "كما تراها العين" في الإطار
+                if (!points) points = 0;
 
-                commitPoints(points);
+                // إذا كانت بياض بـ 5 (قاعدة خاصة)
+                // يمكنك تعديل الرقم يدوياً إذا لم تكن هناك نقاط
+                if (points === 0 && confirm("هل هذه بياض بـ 5؟")) points = 5;
+
+                add(points);
                 src.delete(); gray.delete(); circles.delete();
-                closeVision();
-            } catch (e) { alert("المحرك الذكي لا يزال يتحمل.."); }
+                closeCam();
+            } catch (e) { alert("انتظر تحميل المحرك.."); }
         }
 
-        function commitPoints(n) {
+        function add(n) {
             let vH = 0, vV = 0;
-            if (activeSide === 'h') { totalH += n; vH = n; }
-            else { totalV += n; vV = n; }
+            if (active === 'h') { sH += n; vH = n; }
+            else { sV += n; vV = n; }
 
-            document.getElementById('h-sum').innerText = totalH;
-            document.getElementById('v-sum').innerText = totalV;
+            document.getElementById('h-sum').innerText = sH;
+            document.getElementById('v-sum').innerText = sV;
 
             const row = document.createElement('div');
-            row.className = 'entry';
-            row.innerHTML = `
-                <div class="${vH>0?'active-add':'inactive-add'}">${vH}</div>
-                <div class="${vV>0?'active-add':'inactive-add'}">${vV}</div>
-            `;
-            const box = document.getElementById('history-box');
-            box.appendChild(row);
-            box.scrollTop = box.scrollHeight;
-
-            let limit = parseInt(document.getElementById('win-limit').value);
-            if(totalH >= limit) alert("مبروك! HOME فاز بالجولة");
-            else if(totalV >= limit) alert("مبروك! VISITOR فاز بالجولة");
-        }
-
-        function resetAll() {
-            if(confirm("هل تريد مسح سجل النقاط والبدء من جديد؟")) {
-                totalH = 0; totalV = 0;
-                document.getElementById('h-sum').innerText = "0";
-                document.getElementById('v-sum').innerText = "0";
-                document.getElementById('history-box').innerHTML = "";
-            }
+            row.className = 'row';
+            row.innerHTML = `<div>${vH}</div><div>${vV}</div>`;
+            document.getElementById('history').appendChild(row);
         }
     </script>
 </body>
