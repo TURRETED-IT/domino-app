@@ -2,166 +2,230 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>حاسبة الدومينو الذكية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Domino Royal Elite</title>
     <style>
-        :root { --accent: #ff3b30; --green: #4cd964; }
-        
-        body, html { 
+        :root {
+            --accent: #ff3b30;
+            --gold: #d4af37;
+            --green: #34c759;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-heavy: rgba(0, 0, 0, 0.8);
+        }
+
+        body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
-            background: #000 url('domino.png') no-repeat center center fixed;
-            background-size: cover; color: white; font-family: sans-serif;
+            background: #050505 url('domino.png') no-repeat center center fixed;
+            background-size: cover; color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             overflow: hidden;
         }
 
-        /* طبقة تظليل للخلفية */
+        /* طبقة تظليل سينمائية */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); z-index: 1; pointer-events: none;
+            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.9) 100%);
+            z-index: 1; pointer-events: none;
         }
 
         #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-        /* واجهة الإعدادات */
-        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; }
+        /* الشاشات بنظام الأنميشن */
+        .stage { 
+            display: none; height: 100%; flex-direction: column; 
+            align-items: center; justify-content: center; padding: 20px;
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         .active { display: flex; }
 
-        .btn-start { 
-            background: var(--accent); color: white; border: none; padding: 15px 40px; 
-            border-radius: 12px; font-size: 20px; font-weight: bold; cursor: pointer;
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
+
+        /* كرت الإعدادات الفخم */
+        .premium-card {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 35px; padding: 40px 20px;
+            width: 90%; max-width: 380px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
 
-        /* واجهة الحاسبة */
-        .calc-ui { flex: 1; display: flex; flex-direction: column; }
-        .header { display: flex; background: rgba(0,0,0,0.8); padding: 20px 0; border-bottom: 1px solid #333; }
-        .header div { flex: 1; text-align: center; font-size: 22px; font-weight: bold; }
+        h1 { font-weight: 200; letter-spacing: 2px; margin-bottom: 30px; color: var(--gold); }
 
-        .score-list { flex: 1; overflow-y: auto; padding: 10px 0; }
-        .score-row { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; font-size: 24px; }
-        .score-cell { flex: 1; text-align: center; display: flex; justify-content: center; align-items: center; }
-        .x-mark { color: var(--accent); margin: 0 10px; font-weight: bold; }
-
-        .controls { display: flex; justify-content: space-around; padding: 20px; background: rgba(0,0,0,0.5); }
-        .add-btn { 
-            width: 70px; height: 70px; border-radius: 50%; border: 3px solid white; 
-            background: none; color: white; font-size: 35px; cursor: pointer;
+        .input-box {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 15px; margin: 15px 0; color: #fff;
+            width: 100%; box-sizing: border-box; font-size: 18px; text-align: center;
         }
 
-        .total-bar { display: flex; justify-content: space-around; background: #000; padding: 20px 0; font-size: 45px; font-weight: bold; }
-        
-        .restart-btn { background: #333; color: #ccc; border: none; padding: 10px; width: 100%; font-size: 16px; cursor: pointer; }
-
-        /* شاشة الكاميرا */
-        #camera-layer { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: black; z-index: 100; flex-direction: column; 
+        .btn-gold {
+            background: linear-gradient(135deg, #d4af37 0%, #f9d976 100%);
+            color: #000; border: none; padding: 18px; border-radius: 18px;
+            font-size: 18px; font-weight: bold; width: 100%; cursor: pointer;
+            margin-top: 20px; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
         }
-        video { width: 100%; height: 80%; object-fit: cover; }
-        .cam-footer { height: 20%; display: flex; align-items: center; justify-content: center; background: #111; }
+
+        /* واجهة الحاسبة (Scoreboard) */
+        .main-header {
+            display: flex; width: 100%; padding: 60px 0 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+        }
+        .user-tab { flex: 1; text-align: center; }
+        .user-tab h3 { margin: 0; font-size: 24px; font-weight: 300; }
+        .user-tab span { font-size: 12px; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+
+        .score-scroll { flex: 1; overflow-y: auto; width: 100%; mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent); }
+        .score-item { 
+            display: flex; justify-content: space-around; padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 28px; font-weight: 200;
+        }
+
+        .action-circle {
+            width: 85px; height: 85px; border-radius: 50%;
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px); color: #fff; font-size: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s;
+        }
+        .action-circle:active { transform: scale(0.85); background: var(--accent); }
+
+        .total-display {
+            display: flex; width: 100%; background: var(--glass-heavy);
+            padding: 30px 0; border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 55px; font-weight: 100; justify-content: space-around;
+        }
+
+        .floating-footer { display: flex; gap: 2px; width: 100%; background: #111; }
+        .f-btn { flex: 1; padding: 20px; background: #0a0a0a; border: none; color: #555; font-size: 12px; letter-spacing: 1px; }
+
+        /* الكاميرا */
+        #cam-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; }
+        .shutter {
+            width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff;
+            background: transparent; position: absolute; bottom: 50px; left: 50%;
+            transform: translateX(-50%); display: flex; align-items: center; justify-content: center;
+        }
+        .shutter-inner { width: 60px; height: 60px; background: var(--accent); border-radius: 50%; }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
 
     <div id="app-container">
-        <div id="setup-stage" class="stage active">
-            <h1 style="margin-bottom: 30px;">Domino Calc Pro</h1>
-            <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-bottom: 20px; width: 80%; text-align: center;">
-                <p>هدف الفوز:</p>
-                <input type="number" id="win-limit" value="151" style="width: 100px; padding: 10px; text-align: center; font-size: 18px;">
+        <div id="stage-setup" class="stage active">
+            <div class="premium-card">
+                <img src="icon.png" width="80" style="margin-bottom: 10px; filter: drop-shadow(0 0 10px var(--gold));">
+                <h1>DOMINO ROYAL</h1>
+                <div style="text-align: right; font-size: 14px; opacity: 0.6; margin-bottom: 5px;">هدف الفوز</div>
+                <input type="number" id="goal" class="input-box" value="151">
+                
+                <div style="text-align: right; font-size: 14px; opacity: 0.6; margin-bottom: 5px; margin-top: 10px;">عدد اللاعبين</div>
+                <select id="p-count" class="input-box">
+                    <option value="2">لاعبين (2)</option>
+                    <option value="4">أربعة لاعبين (4)</option>
+                </select>
+                
+                <button class="btn-gold" onclick="launch()">بدء التجربة الملكية</button>
             </div>
-            <button class="btn-start" onclick="startApp()">ابدأ الحساب</button>
         </div>
 
-        <div id="calc-stage" class="stage calc-ui">
-            <div class="header">
-                <div>Home (لك)</div>
-                <div>Visitor (الخصم)</div>
+        <div id="stage-main" class="stage" style="padding:0; justify-content: flex-start;">
+            <div class="main-header">
+                <div class="user-tab">
+                    <span>Master</span>
+                    <h3>Home (لك)</h3>
+                </div>
+                <div class="user-tab">
+                    <span>Opponent</span>
+                    <h3>Visitor</h3>
+                </div>
             </div>
-            <div class="controls">
-                <button class="add-btn" onclick="openCam('you')">+</button>
-                <button class="add-btn" onclick="openCam('opp')">+</button>
+
+            <div style="display: flex; width: 100%; justify-content: space-around; margin: 30px 0;">
+                <div class="action-circle" onclick="openScanner('home')">+</div>
+                <div class="action-circle" onclick="openScanner('visit')">+</div>
             </div>
-            <div id="history" class="score-list"></div>
-            <div class="total-bar">
-                <div id="total-you" style="color: var(--green);">0</div>
-                <div id="total-opp" style="color: var(--accent);">0</div>
+
+            <div id="score-history" class="score-scroll"></div>
+
+            <div class="total-display">
+                <div id="h-total" style="color: var(--green);">0</div>
+                <div id="v-total" style="color: var(--accent);">0</div>
             </div>
-            <button class="restart-btn" onclick="resetScores()">تصفير النتائج (RESTART)</button>
+
+            <div class="floating-footer">
+                <button class="f-btn" onclick="resetData()">مسح الجولة</button>
+                <button class="f-btn" onclick="location.reload()">القائمة</button>
+            </div>
         </div>
     </div>
 
-    <div id="camera-layer">
-        <video id="video" autoplay playsinline></video>
-        <div class="cam-footer">
-            <button class="btn-start" onclick="captureScore()">التقاط وعد النقاط</button>
-        </div>
+    <div id="cam-overlay">
+        <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+        <div class="shutter" onclick="scanNow()"><div class="shutter-inner"></div></div>
     </div>
 
     <script>
-        let scoreYou = 0, scoreOpp = 0;
-        let activeSide = '';
-        let stream = null;
+        let hScore = 0, vScore = 0;
+        let sideTrack = '';
+        let camStream = null;
 
-        function startApp() {
-            document.getElementById('setup-stage').classList.remove('active');
-            document.getElementById('calc-stage').classList.add('active');
+        function launch() {
+            document.getElementById('stage-setup').classList.remove('active');
+            document.getElementById('stage-main').classList.add('active');
         }
 
-        async function openCam(side) {
-            activeSide = side;
-            document.getElementById('camera-layer').style.display = 'flex';
+        async function openScanner(side) {
+            sideTrack = side;
+            document.getElementById('cam-overlay').style.display = 'block';
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" } 
+                camStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment", focusMode: "continuous" } 
                 });
-                document.getElementById('video').srcObject = stream;
-            } catch (err) {
-                alert("خطأ: الكاميرا تتطلب اتصال HTTPS أو إذن الوصول.");
-                document.getElementById('camera-layer').style.display = 'none';
+                document.getElementById('webcam').srcObject = camStream;
+            } catch (e) {
+                alert("يرجى تفعيل الكاميرا عبر HTTPS");
+                document.getElementById('cam-overlay').style.display = 'none';
             }
         }
 
-        function captureScore() {
-            // هنا نضع رقم عشوائي كمحاكاة لعمل الـ AI
-            // لبرمجة AI حقيقي 100% تحتاج مكتبة TensorFlow.js
-            let points = Math.floor(Math.random() * 20) + 1;
-            
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('camera-layer').style.display = 'none';
-            
-            updateScore(activeSide, points);
+        function scanNow() {
+            let res = Math.floor(Math.random() * 20) + 1; // محاكاة العد الذكي
+            if(camStream) camStream.getTracks().forEach(t => t.stop());
+            document.getElementById('cam-overlay').style.display = 'none';
+            postScore(sideTrack, res);
         }
 
-        function updateScore(side, pts) {
-            let pYou = 0, pOpp = 0;
-            if (side === 'you') { pYou = pts; scoreYou += pts; }
-            else { pOpp = pts; scoreOpp += pts; }
+        function postScore(side, val) {
+            let hVal = 0, vVal = 0;
+            if(side === 'home') { hVal = val; hScore += val; }
+            else { vVal = val; vScore += val; }
 
-            const row = document.createElement('div');
-            row.className = 'score-row';
-            row.innerHTML = `
-                <div class="score-cell">${pYou === 0 ? '<span class="x-mark">×</span>' : ''} ${pYou}</div>
-                <div class="score-cell">${pOpp} ${pOpp === 0 ? '<span class="x-mark">×</span>' : ''}</div>
+            const item = document.createElement('div');
+            item.className = 'score-item';
+            item.innerHTML = `
+                <div style="color:${hVal>0?'#fff':'#444'}">${hVal || '×'}</div>
+                <div style="color:${vVal>0?'#fff':'#444'}">${vVal || '×'}</div>
             `;
             
-            const history = document.getElementById('history');
-            history.insertBefore(row, history.firstChild);
+            const box = document.getElementById('score-history');
+            box.insertBefore(item, box.firstChild);
 
-            document.getElementById('total-you').innerText = scoreYou;
-            document.getElementById('total-opp').innerText = scoreOpp;
+            document.getElementById('h-total').innerText = hScore;
+            document.getElementById('v-total').innerText = vScore;
 
-            let limit = parseInt(document.getElementById('win-limit').value);
-            if (scoreYou >= limit) alert("مبروك! لقد فزت.");
-            else if (scoreOpp >= limit) alert("حظ أوفر، فاز الخصم.");
+            let target = parseInt(document.getElementById('goal').value);
+            if(hScore >= target) alert("الملك يفوز! (Home)");
+            else if(vScore >= target) alert("الخصم يتفوق! (Visitor)");
         }
 
-        function resetScores() {
-            if(confirm("هل أنت متأكد من تصفير النتائج؟")) {
-                scoreYou = 0; scoreOpp = 0;
-                document.getElementById('total-you').innerText = "0";
-                document.getElementById('total-opp').innerText = "0";
-                document.getElementById('history').innerHTML = "";
+        function resetData() {
+            if(confirm("هل تود تصفير السجل؟")) {
+                hScore = 0; vScore = 0;
+                document.getElementById('h-total').innerText = "0";
+                document.getElementById('v-total').innerText = "0";
+                document.getElementById('score-history').innerHTML = "";
             }
         }
     </script>
