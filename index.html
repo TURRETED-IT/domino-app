@@ -3,125 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Domino AI Pro</title>
+    <title>Domino AI Pro - Fixed</title>
     <style>
-        :root { --accent: #ff3b30; --bg: #0a0a0a; --glass: rgba(255, 255, 255, 0.12); --text: #f0f0f0; }
+        :root { --accent: #ff3b30; --glass: rgba(255, 255, 255, 0.15); }
         
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%;
-            background: var(--bg); color: var(--text); font-family: 'Segoe UI', Roboto, sans-serif;
+            background: #000; color: white; font-family: sans-serif;
             overflow: hidden;
         }
 
+        /* الخلفية (مؤمنة ضد اعتراض النقر) */
         .main-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('0.png') no-repeat center center;
-            background-size: cover; z-index: -1; filter: brightness(0.3) blur(4px);
+            background-size: cover; z-index: 1; filter: brightness(0.3) blur(5px);
+            pointer-events: none; /* يمنع الخلفية من امتصاص النقرات */
         }
 
-        /* نظام المراحل الاحترافي */
-        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s; text-align: center; }
-        .active { display: flex; }
+        /* حاوية المراحل */
+        #app-container {
+            position: relative; z-index: 10; height: 100%; width: 100%;
+        }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .stage { 
+            display: none; height: 100%; width: 100%;
+            flex-direction: column; align-items: center; justify-content: center; 
+            text-align: center;
+        }
+        .active { display: flex !important; }
 
-        /* الأزرار والشاشات الاحترافية (Card-based UI) */
+        /* أزرار احترافية بمساحة نقر واسعة */
         .card-btn {
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(15px); padding: 25px; margin: 12px;
-            width: 85%; max-width: 320px; border-radius: 20px;
-            color: var(--text); font-size: 21px; cursor: pointer; transition: 0.3s;
-            display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .card-btn:active { transform: scale(0.96); background: rgba(255,255,255,0.2); }
-        .card-btn.accent { background: var(--accent); border: none; font-weight: bold; justify-content: center; }
-
-        .settings-box { 
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); 
-            padding: 30px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
-            width: 80%; max-width: 300px; display: flex; flex-direction: column; gap: 15px;
-        }
-        input, select { 
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.1); 
-            color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; width: 100%;
-            -webkit-appearance: none;
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 22px; margin: 12px; width: 85%; max-width: 320px;
+            border-radius: 18px; color: white; font-size: 20px;
+            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+            -webkit-tap-highlight-color: transparent; /* يمنع الوميض الرمادي في الأيفون */
         }
 
-        /* واجهة الحاسبة (Scoreboard) */
-        .calc-header { display: flex; width: 100%; padding: 20px 0; background: rgba(0,0,0,0.7); }
-        .header-box { flex: 1; text-align: center; font-size: 20px; font-weight: bold; color: rgba(255,255,255,0.8); }
-
-        .plus-row { display: flex; width: 100%; justify-content: space-around; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .plus-btn { 
-            width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.5);
-            background: var(--glass); color: white; font-size: 35px; cursor: pointer;
-            transition: 0.2s;
-        }
-        .plus-btn:active { border-color: white; transform: scale(0.9); }
-
-        .score-area { flex: 1; width: 100%; overflow-y: auto; padding-top: 10px; }
-        .score-row { display: flex; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 12px 0; font-size: 22px; }
-        .score-cell { flex: 1; display: flex; justify-content: center; align-items: center; }
-        .x-mark { color: var(--accent); margin-right: 10px; font-weight: bold; opacity: 0.8; }
-
-        .footer-total { 
-            width: 100%; background: black; padding: 25px 0; 
-            display: flex; justify-content: space-around; font-size: 50px; font-weight: bold;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
-        }
-
-        /* واجهة الكاميرا الحقيقية */
-        #camera-ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 1000; display: none; }
-        #video-feed { width: 100%; height: 80%; object-fit: cover; }
-        .cam-controls { 
-            height: 20%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: #111; color: #888; gap: 10px;
-        }
-        .shutter-btn { 
-            width: 75px; height: 75px; border-radius: 50%; border: 6px solid rgba(255,255,255,0.5);
-            background: var(--accent); cursor: pointer; transition: 0.2s;
-        }
-        .shutter-btn:active { transform: scale(0.9); border-color: white; }
+        /* واجهة الحاسبة */
+        .calc-ui { flex-direction: column; justify-content: flex-start; }
+        .score-row { display: flex; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 15px 0; }
+        .score-cell { flex: 1; font-size: 24px; font-weight: bold; }
+        .footer-total { width: 100%; background: #000; padding: 20px 0; display: flex; justify-content: space-around; font-size: 40px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="main-bg"></div>
 
-    <div id="stage-1" class="stage active">
-        <img src="icon.png" width="120" style="margin-bottom: 25px;">
-        <h1 style="margin-bottom: 45px; font-size: 36px; font-weight: 300;">Domino AI Pro</h1>
-        <button class="card-btn" onclick="nextStage(2, 'game')">🎮 وضع اللعب <span style="opacity: 0.6;">></span></button>
-        <button class="card-btn" onclick="nextStage(2, 'calc')">📊 وضع الحساب <span style="opacity: 0.6;">></span></button>
+    <div id="app-container">
+        <div id="stage-1" class="stage active">
+            <img src="icon.png" width="100" style="margin-bottom: 20px;">
+            <h1>Domino AI Pro</h1>
+            <button class="card-btn" onclick="goToStage(2)">📊 وضع الحساب <span>></span></button>
+            <button class="card-btn" onclick="alert('جاري توزيع 7 قطع للروبوت...')">🎮 وضع اللعب <span>></span></button>
+        </div>
+
+        <div id="stage-2" class="stage">
+            <h2>إعدادات الجولة</h2>
+            <div style="background: rgba(0,0,0,0.5); padding: 25px; border-radius: 20px; width: 80%;">
+                <p>نقاط الفوز:</p>
+                <input type="number" id="target-pts" value="151" style="width: 80%; padding: 10px; border-radius: 8px; border: none; text-align: center; font-size: 18px;">
+                <button class="card-btn" style="background: var(--accent); margin: 20px auto; justify-content: center;" onclick="goToStage('calc')">ابدأ الحساب</button>
+            </div>
+            <button onclick="goToStage(1)" style="margin-top: 20px; color: #ccc; background: none; border: none;">رجوع</button>
+        </div>
+
+        <div id="stage-calc" class="stage calc-ui">
+            <div style="display: flex; width: 100%; padding: 20px 0; background: rgba(0,0,0,0.8);">
+                <div style="flex:1">visitor (لك)</div>
+                <div style="flex:1">home (الخصم)</div>
+            </div>
+            <div style="display: flex; width: 100%; justify-content: space-around; padding: 15px;">
+                <button onclick="addPoints('you')" style="width:70px; height:70px; border-radius:50%; border:2px solid white; background:none; color:white; font-size:30px;">+</button>
+                <button onclick="addPoints('opp')" style="width:70px; height:70px; border-radius:50%; border:2px solid white; background:none; color:white; font-size:30px;">+</button>
+            </div>
+            <div id="history" style="flex:1; width:100%; overflow-y:auto;"></div>
+            <div class="footer-total">
+                <div id="sum-you" style="color:#4cd964">0</div>
+                <div id="sum-opp" style="color:var(--accent)">0</div>
+            </div>
+            <button onclick="location.reload()" style="padding:15px; color:gray; background:none; border:none;">Restart</button>
+        </div>
     </div>
 
-    <div id="stage-2" class="stage">
-        <h2 id="settings-title" style="margin-bottom: 30px;">إعدادات الحساب</h2>
-        <div class="settings-box">
-            <p style="margin:0; font-size: 14px;">كم لاعب؟</p>
-            <select id="players-count">
-                <option value="2">2 لاعبين</option>
-                <option value="3">3 لاعبين (تجريبي)</option>
-                <option value="4">4 لاعبين (تجريبي)</option>
-            </select>
-            <p style="margin:0; margin-top: 10px; font-size: 14px;">نقاط الفوز؟</p>
-            <input type="number" id="target-points" value="151">
-            <button class="card-btn accent" style="width: 100%; margin: 10px 0;" onclick="startApp()">ابدأ الآن</button>
-        </div>
-    </div>
+    <script>
+        let totalYou = 0, totalOpp = 0;
 
-    <div id="stage-calc" class="stage" style="padding: 0;">
-        <div class="calc-header">
-            <div class="header-box">visitor (لك)</div>
-            <div class="header-box">home (الخصم)</div>
-        </div>
-        <div class="plus-row">
-            <button class="plus-btn" onclick="openCamera('you')">+</button>
-            <button class="plus-btn" onclick="openCamera('opp')">+</button>
-        </div>
-        <div class="score-area" id="score-history"></div>
-        <div class="footer-total">
-            <div id="total-you" style="color: #4cd964;">0</div>
-            <div id="total-opp" style="color: var(--accent);">0</div>
-        </div>
-        <button onclick="location.reload()" style="background:none; border:none; color:
+        function goToStage(stageId) {
+            // إخفاء الكل
+            document.querySelectorAll('.stage').forEach(s => s.classList.remove('active'));
+            // إظهار المطلوب
+            if(stageId === 'calc') {
+                document.getElementById('stage-calc').classList.add('active');
+            } else {
+                document.getElementById('stage-' + stageId).classList.add('active');
+            }
+        }
+
+        function addPoints(side) {
+            let pts = prompt("أدخل النقاط التي حصلت عليها:", "0");
+            let points = parseInt(pts) || 0;
+            
+            let pYou = 0, pOpp = 0;
+            if(side === 'you') { pYou = points; totalYou += points; }
+            else { pOpp = points; totalOpp += points; }
+
+            const row = document.createElement('div');
+            row.className = 'score-row';
+            row.innerHTML = `<div class="score-cell">${pYou}</div><div class="score-cell">${pOpp}</div>`;
+            
+            const history = document.getElementById('history');
+            history.insertBefore(row, history.firstChild);
+
+            document.getElementById('sum-you').innerText = totalYou;
+            document.getElementById('sum-opp').innerText = totalOpp;
+
+            let target = parseInt(document.getElementById('target-pts').value);
+            if(totalYou >= target) alert("انتهت! فزت أنت.");
+            if(totalOpp >= target) alert("انتهت! فاز الخصم.");
+        }
+    </script>
+</body>
+</html>
