@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Domino Royal Elite V3</title>
+    <title>Domino Royal Elite - Final</title>
     <style>
         :root {
             --gold: #d4af37;
             --accent: #ff3b30;
             --green: #32d74b;
-            --glass: rgba(255, 255, 255, 0.05);
-            --bg-dark: #050505;
+            --bg: #050505;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
-            background: var(--bg-dark) url('domino.png') no-repeat center center fixed;
+            background: var(--bg) url('domino.png') no-repeat center center fixed;
             background-size: cover; color: #fff;
             font-family: -apple-system, system-ui, sans-serif;
             overflow: hidden;
@@ -23,203 +22,185 @@
 
         .overlay {
             position: fixed; inset: 0;
-            background: radial-gradient(circle at center, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.98) 100%);
+            background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0.95) 100%);
             z-index: 1; pointer-events: none;
         }
 
         #app-container { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; }
 
-        /* شاشة الإعدادات */
-        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s ease; }
+        /* شاشات النظام */
+        .stage { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.4s ease; }
         .active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .premium-card {
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(212, 175, 55, 0.15); border-radius: 35px;
-            padding: 30px 20px; width: 80%; max-width: 340px; text-align: center;
-        }
-
-        .input-box {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--gold);
-            border-radius: 12px; padding: 12px; margin: 15px 0; color: #fff;
-            width: 120px; text-align: center; font-size: 18px;
+        /* كرت البداية */
+        .setup-card {
+            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(212, 175, 55, 0.1); border-radius: 30px;
+            padding: 25px; width: 280px; text-align: center;
         }
 
         .btn-gold {
             background: linear-gradient(135deg, #d4af37 0%, #aa891a 100%);
-            color: #000; border: none; padding: 16px; border-radius: 15px;
-            font-size: 16px; font-weight: 700; width: 100%; cursor: pointer;
+            color: #000; border: none; padding: 14px; border-radius: 12px;
+            font-size: 15px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 15px;
         }
 
-        /* واجهة الحاسبة المحسنة */
-        .main-header { 
-            display: flex; width: 100%; padding: 50px 0 15px; 
-            background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.05);
+        /* الحاسبة الرئيسية */
+        .header { 
+            display: flex; width: 100%; padding: 50px 0 10px; 
+            background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .user-tab { flex: 1; text-align: center; }
-        .user-tab h3 { margin: 0; font-size: 14px; font-weight: 300; color: var(--gold); letter-spacing: 1px; }
-        .user-tab .score-now { font-size: 42px; font-weight: 700; margin: 5px 0; }
+        .header-cell { flex: 1; text-align: center; }
+        .header-cell h3 { margin: 0; font-size: 13px; font-weight: 300; color: var(--gold); }
+        .total-score { font-size: 38px; font-weight: 700; margin: 5px 0; }
 
-        /* قائمة النتائج (الترتيب للأسفل) */
-        .score-scroll { 
-            flex: 1; overflow-y: auto; width: 100%; padding: 10px 0;
-            display: flex; flex-direction: column; /* جعل العناصر تترتب طبيعياً */
+        /* قائمة السجل (الجديد بالأسفل) */
+        .history-container { 
+            flex: 1; overflow-y: auto; width: 100%; 
+            display: flex; flex-direction: column; /* الترتيب الطبيعي للأسفل */
         }
-        .score-item { 
-            display: flex; justify-content: space-around; padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 20px; font-weight: 300;
-            animation: slideUp 0.3s ease;
+        .score-entry { 
+            display: flex; justify-content: space-around; padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 18px; font-weight: 200;
         }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* التحكم */
-        .control-panel {
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
-            padding: 20px 0; display: flex; justify-content: space-around;
+        .footer-ctrl {
+            background: rgba(0,0,0,0.85); padding: 15px 0; 
+            display: flex; justify-content: space-around; align-items: center;
             border-top: 1px solid rgba(255,255,255,0.05);
         }
-        .add-trigger {
-            width: 65px; height: 65px; border-radius: 50%; border: 1.5px solid var(--gold);
-            display: flex; align-items: center; justify-content: center; font-size: 30px;
-            background: rgba(212, 175, 55, 0.05); cursor: pointer;
+        .plus-btn {
+            width: 60px; height: 60px; border-radius: 50%; border: 1px solid var(--gold);
+            display: flex; align-items: center; justify-content: center; font-size: 28px;
+            background: rgba(255,255,255,0.03); cursor: pointer;
         }
 
-        /* لوحة الأرقام */
-        #num-pad-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000;
+        /* لوحة الأرقام الفخمة */
+        #pad-modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 2000;
             flex-direction: column; align-items: center; justify-content: center;
         }
-        .pad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 85%; }
-        .num-btn { 
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.1);
-            padding: 15px; border-radius: 12px; font-size: 18px; color: #fff;
+        .grid-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 80%; }
+        .n-btn { 
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            padding: 18px; border-radius: 12px; font-size: 18px; color: #fff;
         }
 
-        .footer-actions { display: flex; background: #000; width: 100%; border-top: 1px solid #111; }
-        .footer-actions button { flex: 1; padding: 12px; background: none; border: none; color: #444; font-size: 11px; }
+        .action-bar { display: flex; width: 100%; background: #000; }
+        .action-bar button { flex: 1; padding: 10px; background: none; border: none; color: #333; font-size: 10px; }
     </style>
 </head>
 <body>
     <div class="overlay"></div>
 
     <div id="app-container">
-        <div id="stage-setup" class="stage active">
-            <div class="premium-card">
-                <h2 style="font-weight: 200; font-size: 24px; margin-bottom: 20px;">DOMINO ROYAL</h2>
-                <div style="font-size: 12px; opacity: 0.5;">هدف الجولة</div>
-                <input type="number" id="target-score" class="input-box" value="151">
-                <button class="btn-gold" onclick="showMain()">دخول الحاسبة</button>
+        <div id="setup-view" class="stage active">
+            <div class="setup-card">
+                <h2 style="font-weight:100; font-size:20px; color:var(--gold);">ROYAL DOMINO</h2>
+                <input type="number" id="win-score" value="151" 
+                style="background:none; border:1px solid #333; color:white; padding:10px; border-radius:10px; width:80px; text-align:center; font-size:18px;">
+                <button class="btn-gold" onclick="launchApp()">دخول</button>
             </div>
         </div>
 
-        <div id="stage-main" class="stage" style="padding:0; justify-content: space-between;">
-            <div class="main-header">
-                <div class="user-tab">
+        <div id="main-view" class="stage" style="padding:0; justify-content: space-between;">
+            <div class="header">
+                <div class="header-cell">
                     <h3>HOME (لك)</h3>
-                    <div id="h-total" class="score-now" style="color: var(--green);">0</div>
+                    <div id="h-sum" class="total-score" style="color:var(--green);">0</div>
                 </div>
-                <div class="user-tab">
+                <div class="header-cell">
                     <h3>VISITOR</h3>
-                    <div id="v-total" class="score-now" style="color: var(--accent);">0</div>
+                    <div id="v-sum" class="total-score" style="color:var(--accent);">0</div>
                 </div>
             </div>
 
-            <div id="history-list" class="score-scroll"></div>
+            <div id="score-history" class="history-container"></div>
 
-            <div class="control-panel">
-                <div class="add-trigger" onclick="openInput('home')">+</div>
-                <div class="add-trigger" onclick="openInput('visit')" style="border-color: var(--accent); color: var(--accent);">+</div>
+            <div class="footer-ctrl">
+                <div class="plus-btn" onclick="openPad('h')">+</div>
+                <div class="plus-btn" onclick="openPad('v')" style="border-color:var(--accent); color:var(--accent);">+</div>
             </div>
 
-            <div class="footer-actions">
-                <button onclick="resetAll()">RESTART</button>
-                <button onclick="location.reload()">HOME</button>
+            <div class="action-bar">
+                <button onclick="resetScores()">RESTART</button>
+                <button onclick="location.reload()">MENU</button>
             </div>
         </div>
     </div>
 
-    <div id="num-pad-overlay">
-        <h3 id="pad-title" style="font-weight: 200; margin-bottom: 20px;">أدخل النقاط</h3>
-        <div class="pad-grid">
-            <button class="num-btn" onclick="submitPoints(0)">0 (بياض)</button>
-            <button class="num-btn" onclick="submitPoints(5)">5</button>
-            <button class="num-btn" onclick="submitPoints(10)">10</button>
-            <button class="num-btn" onclick="submitPoints(15)">15</button>
-            <button class="num-btn" onclick="submitPoints(20)">20</button>
-            <button class="num-btn" onclick="submitPoints(25)">25</button>
-            <input type="number" id="custom-pts" placeholder="رقم آخر" style="grid-column: span 2; padding:15px; border-radius:12px; background:#111; color:#fff; border:1px solid #333; text-align:center;">
-            <button class="num-btn" style="background:var(--green); color:black; font-weight: bold;" onclick="submitCustom()">OK</button>
+    <div id="pad-modal">
+        <h4 id="pad-label" style="font-weight:200; margin-bottom:20px; color:var(--gold);">إضافة نقاط</h4>
+        <div class="grid-pad">
+            <button class="n-btn" onclick="add(0)">0</button>
+            <button class="n-btn" onclick="add(5)">5</button>
+            <button class="n-btn" onclick="add(10)">10</button>
+            <button class="n-btn" onclick="add(15)">15</button>
+            <button class="n-btn" onclick="add(20)">20</button>
+            <button class="n-btn" onclick="add(25)">25</button>
+            <input type="number" id="custom-in" placeholder="غير ذلك" style="grid-column: span 2; padding:15px; border-radius:10px; background:#111; color:#fff; border:1px solid #222; text-align:center;">
+            <button class="n-btn" style="background:var(--green); color:black; font-weight:700;" onclick="addCustom()">OK</button>
         </div>
-        <button onclick="closeInput()" style="margin-top:25px; color:var(--accent); background:none; border:none;">إلغاء</button>
+        <button onclick="closePad()" style="margin-top:20px; color:var(--accent); background:none; border:none; font-size:14px;">إلغاء</button>
     </div>
 
     <script>
-        let scoreH = 0, scoreV = 0;
-        let currentTargetSide = '';
+        let sH = 0, sV = 0, side = '';
 
-        function showMain() {
-            document.getElementById('stage-setup').classList.remove('active');
-            document.getElementById('stage-main').classList.add('active');
+        function launchApp() {
+            document.getElementById('setup-view').classList.remove('active');
+            document.getElementById('main-view').classList.add('active');
         }
 
-        function openInput(side) {
-            currentTargetSide = side;
-            document.getElementById('num-pad-overlay').style.display = 'flex';
-            document.getElementById('pad-title').innerText = (side === 'home') ? "إضافة لـ Home" : "إضافة لـ Visitor";
+        function openPad(s) {
+            side = s;
+            document.getElementById('pad-modal').style.display = 'flex';
+            document.getElementById('pad-label').innerText = (s === 'h') ? "إضافة لـ Home" : "إضافة لـ Visitor";
         }
 
-        function closeInput() {
-            document.getElementById('num-pad-overlay').style.display = 'none';
+        function closePad() { document.getElementById('pad-modal').style.display = 'none'; }
+
+        function add(v) { commit(v); }
+        function addCustom() {
+            let v = parseInt(document.getElementById('custom-in').value) || 0;
+            commit(v);
+            document.getElementById('custom-in').value = '';
         }
 
-        function submitPoints(val) { processResult(val); }
-        function submitCustom() {
-            let val = parseInt(document.getElementById('custom-pts').value) || 0;
-            processResult(val);
-            document.getElementById('custom-pts').value = '';
-        }
-
-        function processResult(val) {
+        function commit(v) {
             let vH = 0, vV = 0;
-            if(currentTargetSide === 'home') { vH = val; scoreH += val; }
-            else { vV = val; scoreV += val; }
+            if(side === 'h') { vH = v; sH += v; }
+            else { vV = v; sV += v; }
 
             const row = document.createElement('div');
-            row.className = 'score-item';
+            row.className = 'score-entry';
             row.innerHTML = `
-                <div style="color:${vH>0?'#fff':'#333'}">${vH === 0 && currentTargetSide==='home' ? '0' : (vH || '×')}</div>
-                <div style="color:${vV>0?'#fff':'#333'}">${vV === 0 && currentTargetSide==='visit' ? '0' : (vV || '×')}</div>
+                <div style="color:${vH>0?'#fff':'#333'}">${vH === 0 && side==='h' ? '0' : (vH || '×')}</div>
+                <div style="color:${vV>0?'#fff':'#333'}">${vV === 0 && side==='v' ? '0' : (vV || '×')}</div>
             `;
             
-            const list = document.getElementById('history-list');
-            // التعديل المطلوب: استخدام appendChild للإضافة للأسفل
-            list.appendChild(row); 
-            
-            // التمرير التلقائي للأسفل لمتابعة آخر نتيجة
+            const list = document.getElementById('score-history');
+            list.appendChild(row); // الإضافة للأسفل
             list.scrollTop = list.scrollHeight;
 
-            updateDisplay();
-            closeInput();
-            checkWinner();
+            document.getElementById('h-sum').innerText = sH;
+            document.getElementById('v-sum').innerText = sV;
+
+            closePad();
+            
+            let target = parseInt(document.getElementById('win-score').value);
+            if(sH >= target) setTimeout(() => alert("Home Victory!"), 100);
+            else if(sV >= target) setTimeout(() => alert("Visitor Victory!"), 100);
         }
 
-        function updateDisplay() {
-            document.getElementById('h-total').innerText = scoreH;
-            document.getElementById('v-total').innerText = scoreV;
-        }
-
-        function checkWinner() {
-            let winAt = parseInt(document.getElementById('target-score').value);
-            if(scoreH >= winAt) setTimeout(() => alert("Home Wins!"), 200);
-            else if(scoreV >= winAt) setTimeout(() => alert("Visitor Wins!"), 200);
-        }
-
-        function resetAll() {
-            if(confirm("تصفير النتائج؟")) {
-                scoreH = 0; scoreV = 0;
-                updateDisplay();
-                document.getElementById('history-list').innerHTML = "";
+        function resetScores() {
+            if(confirm("مسح الجولة؟")) {
+                sH = 0; sV = 0;
+                document.getElementById('h-sum').innerText = "0";
+                document.getElementById('v-sum').innerText = "0";
+                document.getElementById('score-history').innerHTML = "";
             }
         }
     </script>
